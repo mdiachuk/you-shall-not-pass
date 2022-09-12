@@ -1,21 +1,30 @@
-chrome.runtime.onInstalled.addListener(() => {
-    chrome.storage.local.get(["blockedDomains"], local => {
-        if (!Array.isArray(local.blockedDomains)) {
-            chrome.storage.local.set({ blockedDomains: [] });
+const OFF_BADGE_COLOR = "#fc8c77";
+const OFF_BADGE_TEXT = "off";
+const EMPTY_BADGE_TEXT = "";
+
+const handleStartup = () => {
+    chrome.storage.local.get(["blockedDomains", "enabled"], local => {
+        let enabled = local.enabled;
+        if (typeof enabled === 'undefined') {
+            chrome.storage.local.set({ enabled: true });
+        } else if (!enabled) {
+            chrome.action.setBadgeBackgroundColor({ color: OFF_BADGE_COLOR });
+            chrome.action.setBadgeText({ text: OFF_BADGE_TEXT });
         }
     });
-    chrome.storage.local.set({ enabled: true });
-    chrome.action.setTitle({ title: "Click to disable" });
-    chrome.action.setBadgeBackgroundColor({ color: "#fc8c77" });
-});
+}
+
+chrome.runtime.onInstalled.addListener(handleStartup);
+
+chrome.runtime.onStartup.addListener(handleStartup);
 
 chrome.action.onClicked.addListener(() => {
     chrome.storage.local.get(["enabled"], local => {
         let { enabled } = local;
         enabled = !enabled;
         chrome.storage.local.set({ enabled });
-        chrome.action.setTitle({ title: enabled ? "Click to disable" : "Click to enable" });
-        chrome.action.setBadgeText({ text: enabled ? "" : "off" });
+        chrome.action.setBadgeBackgroundColor({ color: OFF_BADGE_COLOR });
+        chrome.action.setBadgeText({ text: enabled ? EMPTY_BADGE_TEXT : OFF_BADGE_TEXT });
     });
 });
 
@@ -27,7 +36,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
             return;
         }
         const domain = (new URL(url)).hostname.replace(/^www\./, "");
-        if (blockedDomains.includes(domain)) {
+        if (blockedDomains && blockedDomains.includes(domain)) {
             chrome.tabs.remove(tabId);
         }
     });

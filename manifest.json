@@ -16,5 +16,7 @@
     "service_worker": "background.js"
   },
   "options_page": "options.html",
-  "action": {}
+  "action": {
+    "default_title": "Click to enable or disable"
+  }
 }
